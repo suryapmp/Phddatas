@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>VTU Thesis Explorer – Auto‑load Excel (Card View)</title>
+    <!-- SheetJS for parsing remote Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        body {
+            background: #f1f5f9;
+            margin: 0;
+            padding: 24px 20px;
+            color: #0f2c3d;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card-header {
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 24px 28px;
+            margin-bottom: 28px;
+        }
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin: 0 0 6px;
+            background: linear-gradient(135deg, #1a4d8c, #2b6a9f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            color: #4a627a;
+            margin-bottom: 20px;
+            border-left: 4px solid #2b6a9f;
+            padding-left: 14px;
+        }
+        .search-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-end;
+            margin: 20px 0 10px;
+        }
+        .search-box {
+            flex: 3;
+            min-width: 260px;
+        }
+        .search-box label {
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #2c5a7a;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            border: 1px solid #cbdde9;
+            border-radius: 44px;
+            background: white;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #2b6a9f;
+            box-shadow: 0 0 0 3px rgba(43,106,159,0.2);
+        }
+        .search-btn, .clear-btn {
+            border: none;
+            font-weight: 600;
+            padding: 12px 28px;
+            border-radius: 44px;
+            cursor: pointer;
+        }
+        .search-btn {
+            background: #1f5e8e;
+            color: white;
+        }
+        .search-btn:hover { background: #0f4670; }
+        .clear-btn {
+            background: #e2eaf1;
+            color: #1f4e72;
+        }
+        .clear-btn:hover { background: #d0deea; }
+        .info-badge {
+            background: #e7f0fa;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+        .result-stats {
+            margin: 12px 0 20px;
+        }
+        .accordion-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .student-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            overflow: hidden;
+            border: 1px solid #e4edf5;
+        }
+        .card-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            cursor: pointer;
+            background: white;
+            transition: background 0.1s;
+            gap: 12px;
+        }
+        .card-summary:hover {
+            background: #fafdff;
+        }
+        .summary-info {
+            flex: 4;
+        }
+        .summary-name {
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #1a4d6f;
+        }
+        .summary-meta {
+            font-size: 0.8rem;
+            color: #5b7f9c;
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .summary-usn {
+            font-family: monospace;
+            background: #eef3fc;
+            padding: 2px 10px;
+            border-radius: 30px;
+        }
+        .toggle-icon {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #2b6a9f;
+            width: 32px;
+            text-align: center;
+        }
+        .card-details {
+            border-top: 1px solid #e9f0f5;
+            padding: 20px 24px;
+            background: #fefefe;
+            display: none;
+        }
+        .card-details.open {
+            display: block;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+        .detail-item {
+            background: #f9fbfd;
+            border-radius: 20px;
+            padding: 12px 16px;
+            border-left: 4px solid #2b6a9f;
+        }
+        .detail-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #3a6e96;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+        }
+        .detail-value {
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+        .links-section {
+            background: #f2f6fc;
+            border-radius: 20px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+        .links-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+        .link-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .link-btn {
+            background: white;
+            border: 1px solid #cbdde9;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            text-decoration: none;
+            color: #1f5e8e;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .link-btn:hover {
+            background: #eef4fc;
+        }
+        .loading, .error-msg {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 32px;
+        }
+        .no-data {
+            text-align: center;
+            padding: 48px;
+            color: #6f95b5;
+            background: white;
+            border-radius: 32px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.75rem;
+            color: #6882a0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card-header">
+        <h1>📘 VTU PhD Thesis Explorer · Card View</h1>
+        <div class="sub">Automatically loads <code>VTU-All-Thesis-List-v5.xlsx</code> from same folder → no manual upload required</div>
+        
+        <div id="loadStatus" class="info-badge">⏳ Loading data from Excel file...</div>
+        
+        <div class="search-section">
+            <div class="search-box">
+                <label>🔎 Search (name, USN, supervisor, any field)</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="e.g., 4AD15PEJ02, Bhagya, Mahesh, Shodhganga" disabled>
+            </div>
+            <button id="searchBtn" class="search-btn" disabled>Search</button>
+            <button id="clearBtn" class="clear-btn" disabled>Clear</button>
+        </div>
+        <div id="resultStats" class="result-stats"></div>
+    </div>
+
+    <div id="accordionContainer" class="accordion-container">
+        <div class="loading">📂 Fetching and parsing Excel file…</div>
+    </div>
+    <footer>🔗 All detected URLs become clickable links (open new tab). Expand any card to see full details and links.</footer>
+</div>
+
+<script>
+    // ================= CONFIGURATION =================
+    // Place your Excel file in the same directory as this HTML file.
+    // If the filename is different, change the variable below.
+    const EXCEL_FILE_PATH = "VTU-All-Thesis-List-v5.xlsx";
+    // =================================================
+
+    let allStudentRecords = [];
+    let filteredRecords = [];
+
+    // Helper: detect URL
+    function isUrl(str) {
+        if (!str || typeof str !== 'string') return false;
+        let s = str.trim();
+        return s.startsWith('http://') || s.startsWith('https://');
+    }
+
+    // Extract all hyperlinks from a record
+    function extractLinksFromRecord(record) {
+        let links = [];
+        for (let key in record) {
+            let val = record[key];
+            if (val && typeof val === 'string' && isUrl(val)) {
+                links.push({ label: key, url: val.trim() });
+            }
+        }
+        return links;
+    }
+
+    function getDisplayValue(value) {
+        if (value === undefined || value === null) return "—";
+        let str = value.toString().trim();
+        if (str === "") return "—";
+        if (isUrl(str)) return "🔗 Link (see below)";
+        return str;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Toggle card (global for onclick)
+    window.toggleCard = function(cardId) {
+        const content = document.getElementById(cardId);
+        const icon = document.getElementById(`icon-${cardId}`);
+        if (!content || !icon) return;
+        if (content.classList.contains('open')) {
+            content.classList.remove('open');
+            icon.innerHTML = "▼";
+        } else {
+            content.classList.add('open');
+            icon.innerHTML = "▲";
+        }
+    };
+
+    function renderCards(records, searchHighlight = "") {
+        const container = document.getElementById("accordionContainer");
+        if (!records.length) {
+            container.innerHTML = `<div class="no-data">🔍 No matching students found. Try a different keyword.</div>`;
+            return;
+        }
+        let html = "";
+        records.forEach((rec, idx) => {
+            const scholarName = rec["Name of the Scholar"] || rec["scholarName"] || rec["Scholar Name"] || "—";
+            const enrolment = rec["Ph.D. Enrolment No."] || rec["enrolmentNo"] || rec["USN"] || "—";
+            const supervisor = rec["Name of the Supervisor"] || rec["supervisor"] || "—";
+            const department = rec["Department of the Supervisor"] || rec["Department"] || "—";
+            const thesisDate = rec["Date of submission of thesis"] || "";
+            const vivaDate = rec["Date of viva-voce"] || "";
+            const awardDate = rec["Date of award of Ph.D."] || "";
+            const links = extractLinksFromRecord(rec);
+
+            // Important fields to show in detail grid
+            const importantFields = [
+                "Address for Communication", "Educational Qualifications(PG)", "Name of the University (PG)",
+                "Research paper(s) published", "Plagiarism check report", "Co-Supervisor"
+            ];
+            
+            let detailsHtml = `<div class="detail-grid">`;
+            const coreDetails = {
+                "🎓 Enrolment No.": enrolment,
+                "👨‍🏫 Supervisor": supervisor,
+                "🏛️ Department": department,
+                "📅 Thesis Submitted": thesisDate || "—",
+                "🎤 Viva Voce": vivaDate || "—",
+                "🏅 Award Date": awardDate || "—"
+            };
+            for (let [label, value] of Object.entries(coreDetails)) {
+                detailsHtml += `<div class="detail-item"><div class="detail-label">${label}</div><div class="detail-value">${getDisplayValue(value)}</div></div>`;
+            }
+            for (let field of importantFields) {
+                if (rec[field] && rec[field].toString().trim() !== "" && !coreDetails.hasOwnProperty(field)) {
+                    let val = rec[field];
+                    if (!isUrl(val)) {
+                        detailsHtml += `<div class="detail-item"><div class="detail-label">${field}</div><div class="detail-value">${getDisplayValue(val)}</div></div>`;
+                    }
+                }
+            }
+            detailsHtml += `</div>`;
+
+            let linksHtml = `<div class="links-section"><div class="links-title">🔗 Important Links (thesis, Shodhganga, reports)</div><div class="link-buttons">`;
+            if (links.length === 0) {
+                linksHtml += `<span style="font-size:0.8rem;">No external links in this record.</span>`;
+            } else {
+                links.forEach(link => {
+                    let displayLabel = link.label.length > 40 ? link.label.substring(0, 37) + "..." : link.label;
+                    linksHtml += `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="link-btn">🔗 ${escapeHtml(displayLabel)}</a>`;
+                });
+            }
+            linksHtml += `</div></div>`;
+
+            const uniqueId = `card-${idx}-${enrolment.replace(/[^a-zA-Z0-9]/g, '')}`;
+            html += `
+                <div class="student-card">
+                    <div class="card-summary" onclick="toggleCard('${uniqueId}')">
+                        <div class="summary-info">
+                            <div class="summary-name">${escapeHtml(scholarName)}</div>
+                            <div class="summary-meta">
+                                <span class="summary-usn">${escapeHtml(enrolment)}</span>
+                                <span>👤 ${escapeHtml(supervisor)}</span>
+                            </div>
+                        </div>
+                        <div class="toggle-icon" id="icon-${uniqueId}">▼</div>
+                    </div>
+                    <div class="card-details" id="${uniqueId}">
+                        ${detailsHtml}
+                        ${linksHtml}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function filterData(records, query) {
+        if (!query.trim()) return records.slice();
+        const lowerQuery = query.toLowerCase();
+        return records.filter(rec => {
+            for (let key in rec) {
+                let val = rec[key];
+                if (val && val.toString().toLowerCase().includes(lowerQuery)) return true;
+            }
+            return false;
+        });
+    }
+
+    // Parse Excel from ArrayBuffer
+    function parseExcelToRecords(arrayBuffer) {
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const raw = XLSX.utils.sheet_to_json(sheet, { defval: "", header: 1 });
+        if (!raw || raw.length < 2) return [];
+        const headers = raw[0].map(cell => (cell === undefined || cell === null) ? `col_${Math.random()}` : cell.toString().trim());
+        const rows = [];
+        for (let i = 1; i < raw.length; i++) {
+            const rowData = raw[i];
+            if (!rowData || rowData.length === 0) continue;
+            let isEmpty = true;
+            for (let j = 0; j < rowData.length; j++) {
+                if (rowData[j] && rowData[j].toString().trim() !== "") { isEmpty = false; break; }
+            }
+            if (isEmpty) continue;
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                let val = (j < rowData.length) ? rowData[j] : "";
+                if (val === undefined || val === null) val = "";
+                obj[headers[j]] = val;
+            }
+            rows.push(obj);
+        }
+        return rows;
+    }
+
+    // Fetch and load Excel from static path
+    function loadExcelFromFile() {
+        const statusDiv = document.getElementById("loadStatus");
+        const container = document.getElementById("accordionContainer");
+        statusDiv.innerHTML = "⏳ Fetching Excel file...";
+        container.innerHTML = `<div class="loading">📥 Loading ${EXCEL_FILE_PATH} ...</div>`;
+        
+        fetch(EXCEL_FILE_PATH)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: File not found. Make sure "${EXCEL_FILE_PATH}" is in the same folder.`);
+                }
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer => {
+                const records = parseExcelToRecords(arrayBuffer);
+                if (!records.length) {
+                    statusDiv.innerHTML = "⚠️ No valid records found in the Excel file.";
+                    container.innerHTML = `<div class="no-data">No student records could be parsed. Check file format.</div>`;
+                    return;
+                }
+                allStudentRecords = records;
+                filteredRecords = [...allStudentRecords];
+                statusDiv.innerHTML = `✅ Loaded ${allStudentRecords.length} student records. Click on any card to expand.`;
+                renderCards(filteredRecords);
+                document.getElementById("resultStats").innerHTML = `<span class="info-badge">📋 Total: ${filteredRecords.length} students</span>`;
+                // Enable search UI
+                document.getElementById("searchInput").disabled = false;
+                document.getElementById("searchBtn").disabled = false;
+                document.getElementById("clearBtn").disabled = false;
+            })
+            .catch(err => {
+                console.error(err);
+                statusDiv.innerHTML = `❌ Failed to load Excel: ${err.message}. Ensure "${EXCEL_FILE_PATH}" exists in the same directory.`;
+                container.innerHTML = `<div class="error-msg">⚠️ Could not load data. Place your VTU Excel file (named exactly "${EXCEL_FILE_PATH}") alongside this HTML file.<br><br>If using GitHub Pages, upload both files.</div>`;
+            });
+    }
+
+    // Search & clear handlers
+    function performSearch() {
+        if (!allStudentRecords.length) return;
+        const query = document.getElementById("searchInput").value;
+        filteredRecords = filterData(allStudentRecords, query);
+        renderCards(filteredRecords);
+        document.getElementById("resultStats").innerHTML = `<span class="info-badge">🔍 ${filteredRecords.length} result(s) for “${escapeHtml(query) || 'empty'}” (out of ${allStudentRecords.length})</span>`;
+    }
+
+    document.getElementById("searchBtn").addEventListener("click", performSearch);
+    document.getElementById("clearBtn").addEventListener("click", () => {
+        document.getElementById("searchInput").value = "";
+        performSearch();
+        document.getElementById("searchInput").focus();
+    });
+    document.getElementById("searchInput").addEventListener("keyup", (e) => { if (e.key === "Enter") performSearch(); });
+
+    // Start loading
+    loadExcelFromFile();
+</script>
+</body>
+</html>
