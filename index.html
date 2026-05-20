@@ -2,112 +2,927 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>VTU Thesis Explorer – Auto‑load Excel (Card View)</title>
-    <!-- SheetJS for parsing remote Excel -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ThesisPulse · VTU Research Hub</title>
+    <!-- SheetJS for parsing Excel remotely -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
-            box-sizing: border-box;
-            font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
-        }
-        body {
-            background: #f1f5f9;
             margin: 0;
-            padding: 24px 20px;
-            color: #0f2c3d;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            background: linear-gradient(145deg, #f5f9ff 0%, #eef2f8 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding: 2rem 1.5rem;
+            color: #0a2a3b;
+        }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
         }
-        .card-header {
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            padding: 24px 28px;
-            margin-bottom: 28px;
+
+        /* header styling */
+        .header {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            padding: 2rem 2rem 1.8rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.02);
+            border: 1px solid rgba(255,255,255,0.7);
         }
+
         h1 {
-            font-size: 1.9rem;
-            font-weight: 700;
-            margin: 0 0 6px;
-            background: linear-gradient(135deg, #1a4d8c, #2b6a9f);
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1a4d8c, #2b6a9f, #3f8fc7);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
         }
+
+        .badge {
+            background: #e5f0fa;
+            border-radius: 100px;
+            padding: 0.25rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1f5e8e;
+        }
+
         .sub {
-            color: #4a627a;
-            margin-bottom: 20px;
-            border-left: 4px solid #2b6a9f;
-            padding-left: 14px;
+            color: #4f6f8f;
+            margin-top: 0.6rem;
+            font-weight: 450;
+            border-left: 3px solid #2b6a9f;
+            padding-left: 1rem;
         }
-        .search-section {
+
+        /* search panel */
+        .search-panel {
+            margin-top: 1.5rem;
             display: flex;
             flex-wrap: wrap;
-            gap: 16px;
             align-items: flex-end;
-            margin: 20px 0 10px;
+            gap: 1rem;
         }
         .search-box {
             flex: 3;
-            min-width: 260px;
+            min-width: 220px;
         }
         .search-box label {
-            font-weight: 600;
             font-size: 0.75rem;
+            font-weight: 600;
             text-transform: uppercase;
-            color: #2c5a7a;
+            letter-spacing: 0.5px;
+            color: #2a5a7c;
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 0.4rem;
         }
         .search-input {
             width: 100%;
-            padding: 12px 18px;
-            font-size: 0.95rem;
-            border: 1px solid #cbdde9;
-            border-radius: 44px;
+            padding: 0.9rem 1.2rem;
+            font-size: 1rem;
+            border: 1px solid #cde0ed;
+            border-radius: 60px;
             background: white;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }
         .search-input:focus {
             outline: none;
             border-color: #2b6a9f;
             box-shadow: 0 0 0 3px rgba(43,106,159,0.2);
         }
-        .search-btn, .clear-btn {
-            border: none;
-            font-weight: 600;
-            padding: 12px 28px;
-            border-radius: 44px;
-            cursor: pointer;
-        }
-        .search-btn {
+        button {
             background: #1f5e8e;
+            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 60px;
+            font-weight: 600;
             color: white;
+            cursor: pointer;
+            transition: 0.15s;
+            font-size: 0.9rem;
         }
-        .search-btn:hover { background: #0f4670; }
+        button:hover {
+            background: #0f4670;
+            transform: translateY(-1px);
+        }
         .clear-btn {
             background: #e2eaf1;
             color: #1f4e72;
         }
-        .clear-btn:hover { background: #d0deea; }
-        .info-badge {
-            background: #e7f0fa;
-            padding: 10px 18px;
-            border-radius: 40px;
+        .clear-btn:hover {
+            background: #d0deea;
+        }
+        .stats {
+            margin-top: 1rem;
             font-size: 0.85rem;
+            color: #2c607e;
+            background: #eaf2f9;
             display: inline-block;
+            padding: 0.3rem 1.2rem;
+            border-radius: 40px;
         }
-        .result-stats {
-            margin: 12px 0 20px;
+
+        /* result grid (modern cards, no explicit "card view" mention) */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
         }
-        .accordion-container {
+        .record {
+            background: white;
+            border-radius: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #e7edf3;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 16px;
         }
-        .student-card {
+        .record:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.12);
+            border-color: #cde0ed;
+        }
+        .record-header {
+            padding: 1.2rem 1.3rem 0.6rem;
+            border-bottom: 1px solid #f0f4fa;
+        }
+        .scholar-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a4d6f;
+            letter-spacing: -0.2px;
+        }
+        .usn {
+            font-family: 'SF Mono', monospace;
+            background: #eef3fc;
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            color: #2b6a9f;
+        }
+        .record-body {
+            padding: 1rem 1.3rem;
+            flex: 1;
+        }
+        .detail-row {
+            display: flex;
+            margin-bottom: 0.7rem;
+            font-size: 0.85rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .detail-label {
+            font-weight: 700;
+            min-width: 95px;
+            color: #4c6f8f;
+        }
+        .detail-value {
+            color: #1f3e54;
+            word-break: break-word;
+        }
+        .link-group {
+            margin-top: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            border-top: 1px solid #ecf3f9;
+            padding-top: 1rem;
+        }
+        .link-btn {
+            background: #f4f9fe;
+            border-radius: 60px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: #1f6392;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.1s;
+            border: 1px solid #dce7f0;
+        }
+        .link-btn:hover {
+            background: #eaf2f9;
+            border-color: #b9d0e7;
+        }
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 2rem;
+            color: #6f95b5;
+            font-size: 1rem;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 2rem;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            font-size: 0.7rem;
+            color: #6f8faa;
+        }
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .header { padding: 1.2rem; }
+            h1 { font-size: 1.6rem; }
+            .results-grid { grid-template-columns: 1fr; }
+            .detail-row { flex-direction: column; gap: 0.2rem; }
+            .detail-label { min-width: auto; }
+        }
+        .highlight {
+            background-color: #fff0c0;
+            border-radius: 12px;
+            padding: 0 2px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>
+            📘 ThesisPulse 
+            <span class="badge">VTU Research Hub</span>
+        </h1>
+        <div class="sub">PhD thesis archive · search by name or enrolment number · auto‑load from repository</div>
+        
+        <div class="search-panel">
+            <div class="search-box">
+                <label>🔍 SEARCH (NAME / USN / ENROLMENT)</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="e.g. Bhagya, 4AD15PEJ02, D Rammurthy" autocomplete="off">
+            </div>
+            <button id="searchBtn">Search</button>
+            <button id="clearBtn" class="clear-btn">Clear</button>
+        </div>
+        <div id="stats" class="stats">📄 Loading thesis records...</div>
+    </div>
+
+    <div id="resultsContainer" class="results-grid">
+        <div class="loading">⏳ Fetching & parsing VTU data …</div>
+    </div>
+    <footer>🔗 Every link (plagiarism report, Shodhganga, thesis) opens in new tab. Data sourced from official VTU thesis list.</footer>
+</div>
+
+<script>
+    // ------------------- CONFIGURATION -------------------
+    // Place your Excel file in the same folder as this HTML on GitHub Pages
+    const EXCEL_PATH = "VTU-All-Thesis-List-v5.xlsx";
+    // ------------------------------------------------------
+
+    let allRecords = [];       // full parsed data
+    let filtered = [];
+
+    // Helper: detect URLs
+    function isUrl(str) {
+        if (!str || typeof str !== 'string') return false;
+        const s = str.trim();
+        return s.startsWith('http://') || s.startsWith('https://');
+    }
+
+    // Extract all link fields from a record
+    function extractLinks(record) {
+        const links = [];
+        for (let key in record) {
+            let val = record[key];
+            if (val && typeof val === 'string' && isUrl(val)) {
+                links.push({ label: key, url: val.trim() });
+            }
+        }
+        return links;
+    }
+
+    // Format display value (truncate long text, no links inside)
+    function displayText(value) {
+        if (value === undefined || value === null) return "—";
+        let str = value.toString().trim();
+        if (str === "") return "—";
+        if (isUrl(str)) return "🔗 link available";
+        if (str.length > 120) return str.substring(0, 110) + "…";
+        return str;
+    }
+
+    // Escape HTML
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Highlight search term inside text
+    function highlightText(text, searchTerm) {
+        if (!searchTerm || !text) return escapeHtml(text);
+        const lowerText = text.toString().toLowerCase();
+        const lowerTerm = searchTerm.toLowerCase();
+        if (!lowerText.includes(lowerTerm)) return escapeHtml(text);
+        const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return escapeHtml(text).replace(regex, `<span class="highlight">$1</span>`);
+    }
+
+    // Render all records as a clean grid (no explicit "card view" wording but modern layout)
+    function renderResults(records, searchQuery = "") {
+        const container = document.getElementById("resultsContainer");
+        const statsSpan = document.getElementById("stats");
+        
+        if (!records.length) {
+            container.innerHTML = `<div class="no-results">✨ No matching theses found. Try a different name or enrolment number.</div>`;
+            statsSpan.innerHTML = `📭 0 records found`;
+            return;
+        }
+        
+        statsSpan.innerHTML = `🎓 ${records.length} record(s) found ${searchQuery ? `for “${escapeHtml(searchQuery)}”` : ''}`;
+        
+        let html = "";
+        for (let rec of records) {
+            // Core fields
+            const scholarName = rec["Name of the Scholar"] || rec["scholarName"] || "—";
+            const enrolment = rec["Ph.D. Enrolment No."] || rec["enrolmentNo"] || rec["USN"] || "—";
+            const supervisor = rec["Name of the Supervisor"] || rec["supervisor"] || "—";
+            const department = rec["Department of the Supervisor"] || rec["Department"] || "—";
+            const thesisDate = rec["Date of submission of thesis"] || "—";
+            const vivaDate = rec["Date of viva-voce"] || "—";
+            const awardDate = rec["Date of award of Ph.D."] || "—";
+            
+            // Important extra details (avoid repetition)
+            const coSupervisor = rec["Co-Supervisor"] || rec["Name of the Co- Supervisor"] || "";
+            const university = rec["Name of the University (PG)"] || "";
+            const publications = rec["Research paper(s) published in refreed journals during the programme"] || "";
+            
+            const links = extractLinks(rec);
+            
+            // Build display with highlighting
+            const highlightedName = highlightText(scholarName, searchQuery);
+            const highlightedEnrol = highlightText(enrolment, searchQuery);
+            const highlightedSupervisor = highlightText(supervisor, searchQuery);
+            const highlightedDept = highlightText(department, searchQuery);
+            
+            html += `
+                <div class="record">
+                    <div class="record-header">
+                        <div class="scholar-name">${highlightedName}</div>
+                        <div class="usn">${highlightedEnrol}</div>
+                    </div>
+                    <div class="record-body">
+                        <div class="detail-row">
+                            <span class="detail-label">Supervisor</span>
+                            <span class="detail-value">${highlightedSupervisor}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Department</span>
+                            <span class="detail-value">${highlightedDept}</span>
+                        </div>
+                        ${coSupervisor ? `<div class="detail-row"><span class="detail-label">Co‑Supervisor</span><span class="detail-value">${highlightText(coSupervisor, searchQuery)}</span></div>` : ''}
+                        ${university ? `<div class="detail-row"><span class="detail-label">University</span><span class="detail-value">${highlightText(university, searchQuery)}</span></div>` : ''}
+                        <div class="detail-row">
+                            <span class="detail-label">Thesis submitted</span>
+                            <span class="detail-value">${displayText(thesisDate)}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Viva Voce</span>
+                            <span class="detail-value">${displayText(vivaDate)}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Awarded</span>
+                            <span class="detail-value">${displayText(awardDate)}</span>
+                        </div>
+                        ${publications ? `<div class="detail-row"><span class="detail-label">Publications</span><span class="detail-value">${highlightText(displayText(publications), searchQuery)}</span></div>` : ''}
+                        ${links.length ? `<div class="link-group">` : ''}
+                        ${links.map(link => `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="link-btn">🔗 ${escapeHtml(link.label.length > 30 ? link.label.substring(0, 28)+".." : link.label)}</a>`).join('')}
+                        ${links.length ? `</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    // Filter records (case-insensitive) across name, enrolment, supervisor, department
+    function filterRecords(records, query) {
+        if (!query.trim()) return records.slice();
+        const lowerQuery = query.toLowerCase();
+        return records.filter(rec => {
+            const name = (rec["Name of the Scholar"] || rec["scholarName"] || "").toString().toLowerCase();
+            const enrolment = (rec["Ph.D. Enrolment No."] || rec["enrolmentNo"] || rec["USN"] || "").toString().toLowerCase();
+            const supervisor = (rec["Name of the Supervisor"] || rec["supervisor"] || "").toString().toLowerCase();
+            const dept = (rec["Department of the Supervisor"] || rec["Department"] || "").toString().toLowerCase();
+            return name.includes(lowerQuery) || enrolment.includes(lowerQuery) || supervisor.includes(lowerQuery) || dept.includes(lowerQuery);
+        });
+    }
+
+    // Parse Excel from ArrayBuffer
+    function parseExcelData(arrayBuffer) {
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const raw = XLSX.utils.sheet_to_json(sheet, { defval: "", header: 1 });
+        if (!raw || raw.length < 2) return [];
+        
+        const headers = raw[0].map(cell => cell === undefined || cell === null ? `col_${Math.random()}` : cell.toString().trim());
+        const rows = [];
+        for (let i = 1; i < raw.length; i++) {
+            const rowData = raw[i];
+            if (!rowData || rowData.length === 0) continue;
+            let isEmpty = true;
+            for (let j = 0; j < rowData.length; j++) {
+                if (rowData[j] && rowData[j].toString().trim() !== "") { isEmpty = false; break; }
+            }
+            if (isEmpty) continue;
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                let val = j < rowData.length ? rowData[j] : "";
+                if (val === undefined || val === null) val = "";
+                obj[headers[j]] = val;
+            }
+            rows.push(obj);
+        }
+        return rows;
+    }
+
+    // Load Excel from static path
+    function loadData() {
+        const container = document.getElementById("resultsContainer");
+        const statsSpan = document.getElementById("stats");
+        statsSpan.innerHTML = "⏳ Fetching thesis data from repository...";
+        container.innerHTML = `<div class="loading">📡 Loading ${EXCEL_PATH} …</div>`;
+        
+        fetch(EXCEL_PATH)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status} – file not found. Make sure "${EXCEL_PATH}" exists alongside this HTML.`);
+                return res.arrayBuffer();
+            })
+            .then(buffer => {
+                const records = parseExcelData(buffer);
+                if (!records.length) {
+                    statsSpan.innerHTML = "⚠️ No valid data in Excel file.";
+                    container.innerHTML = `<div class="no-results">The Excel file contains no valid thesis rows.</div>`;
+                    return;
+                }
+                allRecords = records;
+                filtered = [...allRecords];
+                statsSpan.innerHTML = `📚 ${allRecords.length} theses loaded · ready to search`;
+                renderResults(filtered, "");
+            })
+            .catch(err => {
+                console.error(err);
+                statsSpan.innerHTML = "❌ Failed to load Excel file.";
+                container.innerHTML = `<div class="no-results">⚠️ Could not load data. Ensure "${EXCEL_PATH}" is present in the same folder.<br>If using GitHub Pages, upload both the HTML and the Excel file.</div>`;
+            });
+    }
+
+    // Search UI
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    
+    function performSearch() {
+        if (!allRecords.length) return;
+        const query = searchInput.value;
+        filtered = filterRecords(allRecords, query);
+        renderResults(filtered, query);
+    }
+    
+    searchBtn.addEventListener("click", performSearch);
+    clearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        performSearch();
+        searchInput.focus();
+    });
+    searchInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") performSearch();
+    });
+    
+    // initial load
+    loadData();
+</script>
+</body>
+</htm            transform: translateY(-1px);
+        }
+        .clear-btn {
+            background: #e2eaf1;
+            color: #1f4e72;
+        }
+        .clear-btn:hover {
+            background: #d0deea;
+        }
+        .stats {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #2c607e;
+            background: #eaf2f9;
+            display: inline-block;
+            padding: 0.3rem 1.2rem;
+            border-radius: 40px;
+        }
+
+        /* result grid (modern cards, no explicit "card view" mention) */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .record {
+            background: white;
+            border-radius: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #e7edf3;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .record:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.12);
+            border-color: #cde0ed;
+        }
+        .record-header {
+            padding: 1.2rem 1.3rem 0.6rem;
+            border-bottom: 1px solid #f0f4fa;
+        }
+        .scholar-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a4d6f;
+            letter-spacing: -0.2px;
+        }
+        .usn {
+            font-family: 'SF Mono', monospace;
+            background: #eef3fc;
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            color: #2b6a9f;
+        }
+        .record-body {
+            padding: 1rem 1.3rem;
+            flex: 1;
+        }
+        .detail-row {
+            display: flex;
+            margin-bottom: 0.7rem;
+            font-size: 0.85rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .detail-label {
+            font-weight: 700;
+            min-width: 95px;
+            color: #4c6f8f;
+        }
+        .detail-value {
+            color: #1f3e54;
+            word-break: break-word;
+        }
+        .link-group {
+            margin-top: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            border-top: 1px solid #ecf3f9;
+            padding-top: 1rem;
+        }
+        .link-btn {
+            background: #f4f9fe;
+            border-radius: 60px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: #1f6392;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.1s;
+            border: 1px solid #dce7f0;
+        }
+        .link-btn:hover {
+            background: #eaf2f9;
+            border-color: #b9d0e7;
+        }
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 2rem;
+            color: #6f95b5;
+            font-size: 1rem;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 2rem;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            font-size: 0.7rem;
+            color: #6f8faa;
+        }
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .header { padding: 1.2rem; }
+            h1 { font-size: 1.6rem; }
+            .results-grid { grid-template-columns: 1fr; }
+            .detail-row { flex-direction: column; gap: 0.2rem; }
+            .detail-label { min-width: auto; }
+        }
+        .highlight {
+            background-color: #fff0c0;
+            border-radius: 12px;
+            padding: 0 2px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>
+            📘 ThesisPulse 
+            <span class="badge">VTU Research Hub</span>
+        </h1>
+        <div class="sub">PhD thesis archive · search by name or enrolment number · auto‑load from repository</div>
+        
+        <div class="search-panel">
+            <div class="search-box">
+                <label>🔍 SEARCH (NAME / USN / ENROLMENT)</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="e.g. Bhagya, 4AD15PEJ02, D Rammurthy" autocomplete="off">
+            </div>
+            <button id="searchBtn">Search</button>
+            <button id="clearBtn" class="clear-btn">Clear</button>
+        </div>
+        <div id="stats" class="stats">📄 Loading thesis records...</div>
+    </div>
+
+    <div id="resultsContainer" class="results-grid">
+        <div class="loading">⏳ Fetching & parsing VTU data …</div>
+    </div>
+    <footer>🔗 Every link (plagiarism report, Shodhganga, thesis) opens in new tab. Data sourced from official VTU thesis list.</footer>
+</div>
+
+<script>
+    // ------------------- CONFIGURATION -------------------
+    // Place your Excel file in the same folder as this HTML on GitHub Pages
+    const EXCEL_PATH = "VTU-All-Thesis-List-v5.xlsx";
+    // ------------------------------------------------------
+
+    let allRecords = [];       // full parsed data
+    let filtered = [];
+
+    // Helper: detect URLs
+    function isUrl(str) {
+        if (!str || typeof str !== 'string') return false;
+        const s = str.trim();
+        return s.startsWith('http://') || s.startsWith('https://');
+    }
+
+    // Extract all link fields from a record
+    function extractLinks(record) {
+        const links = [];
+        for (let key in record) {
+            let val = record[key];
+            if (val && typeof val === 'string' && isUrl(val)) {
+                links.push({ label: key, url: val.trim() });
+            }
+        }
+        return links;
+    }
+
+    // Format display value (truncate long text, no links inside)
+    function displayText(value) {
+        if (value === undefined || value === null) return "—";
+        let str = value.toString().trim();
+        if (str === "") return "—";
+        if (isUrl(str)) return "🔗 link available";
+        if (str.length > 120) return str.substring(0, 110) + "…";
+        return str;
+    }
+
+    // Escape HTML
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Highlight search term inside text
+    function highlightText(text, searchTerm) {
+        if (!searchTerm || !text) return escapeHtml(text);
+        const lowerText = text.toString().toLowerCase();
+        const lowerTerm = searchTerm.toLowerCase();
+        if (!lowerText.includes(lowerTerm)) return escapeHtml(text);
+        const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return escapeHtml(text).replace(regex, `<span class="highlight">$1</span>`);
+    }
+
+    // Render all records as a clean grid (no explicit "card view" wording but modern layout)
+    function renderResults(records, searchQuery = "") {
+        const container = document.getElementById("resultsContainer");
+        const statsSpan = document.getElementById("stats");
+        
+        if (!records.length) {
+            container.innerHTML = `<div class="no-results">✨ No matching theses found. Try a different name or enrolment number.</div>`;
+            statsSpan.innerHTML = `📭 0 records found`;
+            return;
+        }
+        
+        statsSpan.innerHTML = `🎓 ${records.length} record(s) found ${searchQuery ? `for “${escapeHtml(searchQuery)}”` : ''}`;
+        
+        let html = "";
+        for (let rec of records) {
+            // Core fields
+            const scholarName = rec["Name of the Scholar"] || rec["scholarName"] || "—";
+            const enrolment = rec["Ph.D. Enrolment No."] || rec["enrolmentNo"] || rec["USN"] || "—";
+            const supervisor = rec["Name of the Supervisor"] || rec["supervisor"] || "—";
+            const department = rec["Department of the Supervisor"] || rec["Department"] || "—";
+            const thesisDate = rec["Date of submission of thesis"] || "—";
+            const vivaDate = rec["Date of viva-voce"] || "—";
+            const awardDate = rec["Date of award of Ph.D."] || "—";
+            
+            // Important extra details (avoid repetition)
+            const coSupervisor = rec["Co-Supervisor"] || rec["Name of the Co- Supervisor"] || "";
+            const university = rec["Name of the University (PG)"] || "";
+            const publications = rec["Research paper(s) published in refreed journals during the programme"] || "";
+            
+            const links = extractLinks(rec);
+            
+            // Build display with highlighting
+            const highlightedName = highlightText(scholarName, searchQuery);
+            const highlightedEnrol = highlightText(enrolment, searchQuery);
+            const highlightedSupervisor = highlightText(supervisor, searchQuery);
+            const highlightedDept = highlightText(department, searchQuery);
+            
+            html += `
+                <div class="record">
+                    <div class="record-header">
+                        <div class="scholar-name">${highlightedName}</div>
+                        <div class="usn">${highlightedEnrol}</div>
+                    </div>
+                    <div class="record-body">
+                        <div class="detail-row">
+                            <span class="detail-label">Supervisor</span>
+                            <span class="detail-value">${highlightedSupervisor}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Department</span>
+                            <span class="detail-value">${highlightedDept}</span>
+                        </div>
+                        ${coSupervisor ? `<div class="detail-row"><span class="detail-label">Co‑Supervisor</span><span class="detail-value">${highlightText(coSupervisor, searchQuery)}</span></div>` : ''}
+                        ${university ? `<div class="detail-row"><span class="detail-label">University</span><span class="detail-value">${highlightText(university, searchQuery)}</span></div>` : ''}
+                        <div class="detail-row">
+                            <span class="detail-label">Thesis submitted</span>
+                            <span class="detail-value">${displayText(thesisDate)}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Viva Voce</span>
+                            <span class="detail-value">${displayText(vivaDate)}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Awarded</span>
+                            <span class="detail-value">${displayText(awardDate)}</span>
+                        </div>
+                        ${publications ? `<div class="detail-row"><span class="detail-label">Publications</span><span class="detail-value">${highlightText(displayText(publications), searchQuery)}</span></div>` : ''}
+                        ${links.length ? `<div class="link-group">` : ''}
+                        ${links.map(link => `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="link-btn">🔗 ${escapeHtml(link.label.length > 30 ? link.label.substring(0, 28)+".." : link.label)}</a>`).join('')}
+                        ${links.length ? `</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    // Filter records (case-insensitive) across name, enrolment, supervisor, department
+    function filterRecords(records, query) {
+        if (!query.trim()) return records.slice();
+        const lowerQuery = query.toLowerCase();
+        return records.filter(rec => {
+            const name = (rec["Name of the Scholar"] || rec["scholarName"] || "").toString().toLowerCase();
+            const enrolment = (rec["Ph.D. Enrolment No."] || rec["enrolmentNo"] || rec["USN"] || "").toString().toLowerCase();
+            const supervisor = (rec["Name of the Supervisor"] || rec["supervisor"] || "").toString().toLowerCase();
+            const dept = (rec["Department of the Supervisor"] || rec["Department"] || "").toString().toLowerCase();
+            return name.includes(lowerQuery) || enrolment.includes(lowerQuery) || supervisor.includes(lowerQuery) || dept.includes(lowerQuery);
+        });
+    }
+
+    // Parse Excel from ArrayBuffer
+    function parseExcelData(arrayBuffer) {
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const raw = XLSX.utils.sheet_to_json(sheet, { defval: "", header: 1 });
+        if (!raw || raw.length < 2) return [];
+        
+        const headers = raw[0].map(cell => cell === undefined || cell === null ? `col_${Math.random()}` : cell.toString().trim());
+        const rows = [];
+        for (let i = 1; i < raw.length; i++) {
+            const rowData = raw[i];
+            if (!rowData || rowData.length === 0) continue;
+            let isEmpty = true;
+            for (let j = 0; j < rowData.length; j++) {
+                if (rowData[j] && rowData[j].toString().trim() !== "") { isEmpty = false; break; }
+            }
+            if (isEmpty) continue;
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                let val = j < rowData.length ? rowData[j] : "";
+                if (val === undefined || val === null) val = "";
+                obj[headers[j]] = val;
+            }
+            rows.push(obj);
+        }
+        return rows;
+    }
+
+    // Load Excel from static path
+    function loadData() {
+        const container = document.getElementById("resultsContainer");
+        const statsSpan = document.getElementById("stats");
+        statsSpan.innerHTML = "⏳ Fetching thesis data from repository...";
+        container.innerHTML = `<div class="loading">📡 Loading ${EXCEL_PATH} …</div>`;
+        
+        fetch(EXCEL_PATH)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status} – file not found. Make sure "${EXCEL_PATH}" exists alongside this HTML.`);
+                return res.arrayBuffer();
+            })
+            .then(buffer => {
+                const records = parseExcelData(buffer);
+                if (!records.length) {
+                    statsSpan.innerHTML = "⚠️ No valid data in Excel file.";
+                    container.innerHTML = `<div class="no-results">The Excel file contains no valid thesis rows.</div>`;
+                    return;
+                }
+                allRecords = records;
+                filtered = [...allRecords];
+                statsSpan.innerHTML = `📚 ${allRecords.length} theses loaded · ready to search`;
+                renderResults(filtered, "");
+            })
+            .catch(err => {
+                console.error(err);
+                statsSpan.innerHTML = "❌ Failed to load Excel file.";
+                container.innerHTML = `<div class="no-results">⚠️ Could not load data. Ensure "${EXCEL_PATH}" is present in the same folder.<br>If using GitHub Pages, upload both the HTML and the Excel file.</div>`;
+            });
+    }
+
+    // Search UI
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    
+    function performSearch() {
+        if (!allRecords.length) return;
+        const query = searchInput.value;
+        filtered = filterRecords(allRecords, query);
+        renderResults(filtered, query);
+    }
+    
+    searchBtn.addEventListener("click", performSearch);
+    clearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        performSearch();
+        searchInput.focus();
+    });
+    searchInput.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") performSearch();
+    });
+    
+    // initial load
+    loadData();
+</script>
+</body>
+</htm        .student-card {
             background: white;
             border-radius: 24px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
